@@ -1,0 +1,527 @@
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN6
+OBJECT MODULE PLACED IN main6.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main6.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include "mydefine.h"
+   3          
+   4          #define step 15
+   5          
+   6          
+   7          unsigned char TH_H,TL_H,TH_L,TL_L;//
+   8          unsigned char keynum,pwmnum=1,change_flag=0;
+   9          unsigned int  temp,count_pwm1=1500,count_pwm2=1500,count_pwm3=1500,count_pwm4=1500,count_pwm5=1500,count_p
+             -wm6=1500;
+  10          unsigned char temphh[7],temphl[7],templh[7],templl[7];//temphh,temphl,templh,templl;
+  11          
+  12          unsigned char  KeyScan(void);
+  13          void keypro();
+  14          void circle(unsigned char);
+  15          void delay(unsigned char);
+  16          void iruse();
+  17          void ir_scan();
+  18          /*------------------------------------------------
+  19                              定时器初始化子程序
+  20          ------------------------------------------------*/
+  21          void Init_Timer(void)
+  22          {
+  23   1       TMOD = 0x12;     //使用模式1，16位定时器，使用"|"符号可以在使用多个定时器时不受影响    TOMD = TOMD | 0X01          
+             - 
+  24   1       TH1=0x00;            //给定初值，这里使用定时器最大值从0开始计数一直到65535溢出
+  25   1       TL1=0x00;
+  26   1       TH0=0;
+  27   1       TL0=0;
+  28   1       EA=1; 
+  29   1       ET0=0;
+  30   1       ET1=1;
+  31   1       EX0=0;
+  32   1       IT0=1;
+  33   1       TR0=0;
+  34   1       TR1=1;           //定时器开关打开
+  35   1      }
+  36          /*------------------------------------------------
+  37                           数据处理
+  38          ------------------------------------------------*/
+  39          void DataPro(unsigned int temp)
+  40          {
+  41   1               TH_H=(65536-temp)/256;
+  42   1           TL_H=(65536-temp)%256;
+  43   1               TH_L=(46536+temp)/256;
+  44   1               TL_L=(46536+temp)%256;
+  45   1      }
+  46          /*------------------------------------------------
+  47                           主程序
+  48          ------------------------------------------------*/
+  49          main()
+  50          {
+  51   1        unsigned char i;
+  52   1        temp=count_pwm1;
+  53   1        Init_Timer();
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 2   
+
+  54   1        DataPro(temp);
+  55   1        for(i=1;i<7;i++) circle(i); 
+  56   1        while(1)
+  57   1           {
+  58   2                      //iruse();              
+  59   2                       keynum= KeyScan();
+  60   2                        if(keynum==1)
+  61   2                        {
+  62   3                              temphh[pwmnum]=TH_H;temphl[pwmnum]=TH_L;templh[pwmnum]=TL_H;templl[pwmnum]=TL_L;
+  63   3                              pwmnum++;
+  64   3                              change_flag=1;
+  65   3                              if(pwmnum==7) pwmnum=1;
+  66   3                        }
+  67   2                        if(keynum==2)
+  68   2                        {
+  69   3                              temphh[pwmnum]=TH_H;temphl[pwmnum]=TH_L;templh[pwmnum]=TL_H;templl[pwmnum]=TL_L;
+  70   3                              pwmnum--;
+  71   3                              change_flag=1;
+  72   3                              if(pwmnum==0) pwmnum=6;
+  73   3                        }
+  74   2                        
+  75   2               circle(pwmnum);
+  76   2               
+  77   2               }
+  78   1      }
+  79          
+  80          /*------------------------------------------------
+  81                           定时器中断子程序
+  82          ------------------------------------------------*/
+  83          void Timer1_isr(void) interrupt 3
+  84          {
+  85   1              switch(pwmnum)
+  86   1              {
+  87   2                      case 1:{
+  88   3                              if(OUT1)
+  89   3                               {
+  90   4                               TH1=TH_L;                //重新赋值
+  91   4                               TL1=TL_L;
+  92   4                               }
+  93   3                              else
+  94   3                               {
+  95   4                                TH1=TH_H;               //重新赋值
+  96   4                                TL1=TL_H;
+  97   4                                }
+  98   3                              OUT1=!OUT1;
+  99   3                      };break;
+ 100   2                      case 2:
+ 101   2                      {
+ 102   3                   if(OUT2)
+ 103   3                               {
+ 104   4                               TH1=TH_L;                //重新赋值
+ 105   4                               TL1=TL_L;
+ 106   4                               }
+ 107   3                              else
+ 108   3                               {
+ 109   4                                TH1=TH_H;               //重新赋值
+ 110   4                                TL1=TL_H;
+ 111   4                                }
+ 112   3                              OUT2=!OUT2;                     
+ 113   3                      }break;
+ 114   2                      case 3:
+ 115   2                      {
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 3   
+
+ 116   3                   if(OUT3)
+ 117   3                               {
+ 118   4                               TH1=TH_L;                //重新赋值
+ 119   4                               TL1=TL_L;
+ 120   4                               }
+ 121   3                              else
+ 122   3                               {
+ 123   4                                TH1=TH_H;               //重新赋值
+ 124   4                                TL1=TL_H;
+ 125   4                                }
+ 126   3                              OUT3=!OUT3;                     
+ 127   3                      }break;
+ 128   2                      case 4:
+ 129   2                      {
+ 130   3                   if(OUT4)
+ 131   3                               {
+ 132   4                               TH1=TH_L;                //重新赋值
+ 133   4                               TL1=TL_L;
+ 134   4                               }
+ 135   3                              else
+ 136   3                               {
+ 137   4                                TH1=TH_H;               //重新赋值
+ 138   4                                TL1=TL_H;
+ 139   4                                }
+ 140   3                              OUT4=!OUT4;                     
+ 141   3                      }break;
+ 142   2                      case 5:
+ 143   2                      {
+ 144   3                   if(OUT5)
+ 145   3                               {
+ 146   4                               TH1=TH_L;                //重新赋值
+ 147   4                               TL1=TL_L;
+ 148   4                               }
+ 149   3                              else
+ 150   3                               {
+ 151   4                                TH1=TH_H;               //重新赋值
+ 152   4                                TL1=TL_H;
+ 153   4                                }
+ 154   3                              OUT5=!OUT5;                     
+ 155   3                      }break;
+ 156   2                      case 6:
+ 157   2                      {
+ 158   3                   if(OUT6)
+ 159   3                               {
+ 160   4                               TH1=TH_L;                //重新赋值
+ 161   4                               TL1=TL_L;
+ 162   4                               }
+ 163   3                              else
+ 164   3                               {
+ 165   4                                TH1=TH_H;               //重新赋值
+ 166   4                                TL1=TL_H;
+ 167   4                                }
+ 168   3                              OUT6=!OUT6;                     
+ 169   3                      }break;
+ 170   2              }
+ 171   1              keynum=0;
+ 172   1      }
+ 173          
+ 174          /*------------------------------------------------
+ 175                      按键扫描函数，返回扫描键值
+ 176          ------------------------------------------------*/
+ 177          unsigned char  KeyScan()
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 4   
+
+ 178          {
+ 179   1      /********************************************************/  
+ 180   1      if(!KEY1)  //如果检测到低电平，说明按键按下
+ 181   1          {
+ 182   2               delay(10); //延时去抖，一般10-20ms
+ 183   2           if(!KEY1)     //再次确认按键是否按下，没有按下则退出
+ 184   2                 {
+ 185   3              while(!KEY1);//如果确认按下按键等待按键释放，没有则退出
+ 186   3                     {
+ 187   4                         return 1;
+ 188   4      
+ 189   4                              }
+ 190   3                 }
+ 191   2              }
+ 192   1      /********************************************************/  
+ 193   1      else if(!KEY2)  //如果检测到低电平，说明按键按下
+ 194   1          {
+ 195   2               delay(10); //延时去抖，一般10-20ms
+ 196   2           if(!KEY2)     //再次确认按键是否按下，没有按下则退出
+ 197   2                 {
+ 198   3              while(!KEY2);//如果确认按下按键等待按键释放，没有则退出
+ 199   3                     {
+ 200   4                         return 2;
+ 201   4                              }
+ 202   3                 }
+ 203   2              }
+ 204   1      /********************************************************/  
+ 205   1      else if(!KEY3)  //如果检测到低电平，说明按键按下
+ 206   1          {
+ 207   2              delay(10); //延时去抖，一般10-20ms
+ 208   2           if(!KEY3)     //再次确认按键是否按下，没有按下则退出
+ 209   2                 {
+ 210   3       //       while(!KEY3);//如果确认按下按键等待按键释放，没有则退出
+ 211   3                     {
+ 212   4                         return 3;
+ 213   4                              }
+ 214   3                 }
+ 215   2              }
+ 216   1      /********************************************************/  
+ 217   1      else if(!KEY4)  //如果检测到低电平，说明按键按下
+ 218   1          {
+ 219   2               delay(10); //延时去抖，一般10-20ms
+ 220   2           if(!KEY4)     //再次确认按键是否按下，没有按下则退出
+ 221   2                 {
+ 222   3          //    while(!KEY4);//如果确认按下按键等待按键释放，没有则退出
+ 223   3                     {
+ 224   4                        return 4;
+ 225   4                              }
+ 226   3                 }
+ 227   2              }
+ 228   1              else return 0;
+ 229   1      }  
+ 230          
+ 231          
+ 232          
+ 233          void circle(unsigned char pwmnum)
+ 234          {
+ 235   1              switch(pwmnum)
+ 236   1              {
+ 237   2                      case 1: 
+ 238   2                      {
+ 239   3                              P0=0xfe;
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 5   
+
+ 240   3                        if(keynum==3)
+ 241   3                          {
+ 242   4                               if(count_pwm1<CountMax_PWM1)
+ 243   4                                 count_pwm1+=step;
+ 244   4                              }
+ 245   3                        else if(keynum==4)
+ 246   3                         {
+ 247   4                           if(count_pwm1>CountMin_PWM1)
+ 248   4                                 count_pwm1-=step;
+ 249   4                         }
+ 250   3                                 if(change_flag)
+ 251   3                                 {TH_H=temphh[1];TH_L=temphl[1];TL_H=templh[1];TL_L=templl[1];}
+ 252   3                          else 
+ 253   3                                      {
+ 254   4                                      DataPro(count_pwm1);
+ 255   4                                      }
+ 256   3                                      change_flag=0;                          
+ 257   3                      };break;
+ 258   2                      case 2:
+ 259   2                      {
+ 260   3                              P0=0xfd;
+ 261   3                        if(keynum==3)
+ 262   3                          {
+ 263   4                               if(count_pwm2<CountMax_PWM2)
+ 264   4                                 count_pwm2+=step;
+ 265   4      //               DataPro(count_pwm3);
+ 266   4                              }
+ 267   3                        else if(keynum==4)
+ 268   3                         {
+ 269   4                           if(count_pwm2>CountMin_PWM2)
+ 270   4                                 count_pwm2-=step;
+ 271   4      //                       DataPro(count_pwm3);
+ 272   4                         }
+ 273   3                                 if(change_flag)
+ 274   3                                 {TH_H=temphh[2];TH_L=temphl[2];TL_H=templh[2];TL_L=templl[2];}
+ 275   3                          else 
+ 276   3                                      {
+ 277   4                                      DataPro(count_pwm2);
+ 278   4                                      }
+ 279   3                                      change_flag=0;
+ 280   3                      };break;
+ 281   2                      case 3:
+ 282   2                      {
+ 283   3                              P0=0xfb;
+ 284   3                        if(keynum==3)
+ 285   3                          {
+ 286   4                               if(count_pwm3<CountMax_PWM3)
+ 287   4                                 count_pwm3+=step;
+ 288   4      //               DataPro(count_pwm3);
+ 289   4                              }
+ 290   3                        else if(keynum==4)
+ 291   3                         {
+ 292   4                           if(count_pwm3>CountMin_PWM3)
+ 293   4                                 count_pwm3-=step;
+ 294   4      //                       DataPro(count_pwm3);
+ 295   4                         }
+ 296   3                                 if(change_flag)
+ 297   3                                 {TH_H=temphh[3];TH_L=temphl[3];TL_H=templh[3];TL_L=templl[3];}
+ 298   3                          else 
+ 299   3                                      {
+ 300   4                                      DataPro(count_pwm3);
+ 301   4                                      }
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 6   
+
+ 302   3                                      change_flag=0;
+ 303   3                      }break;
+ 304   2                      case 4:
+ 305   2                      {
+ 306   3                              P0=0xf7;
+ 307   3                        if(keynum==3)
+ 308   3                          {
+ 309   4                               if(count_pwm4<CountMax_PWM4)
+ 310   4                                 count_pwm4+=step;
+ 311   4      //               DataPro(count_pwm4);
+ 312   4                              }
+ 313   3                        else if(keynum==4)
+ 314   3                         {
+ 315   4                           if(count_pwm4>CountMin_PWM4)
+ 316   4                                 count_pwm4-=step;
+ 317   4      //                       DataPro(count_pwm4);
+ 318   4                         }
+ 319   3                                 if(change_flag)
+ 320   3                                 {TH_H=temphh[4];TH_L=temphl[4];TL_H=templh[4];TL_L=templl[4];}
+ 321   3                          else 
+ 322   3                                      {
+ 323   4                                      DataPro(count_pwm4);
+ 324   4                                      }
+ 325   3                                      change_flag=0;
+ 326   3                      };break;
+ 327   2                      case 5:
+ 328   2                      {
+ 329   3                              P0=0xef;
+ 330   3                        if(keynum==3)
+ 331   3                          {
+ 332   4                               if(count_pwm5<CountMax_PWM5)
+ 333   4                                 count_pwm5+=step;
+ 334   4      //               DataPro(count_pwm5);
+ 335   4                              }
+ 336   3                        else if(keynum==4)
+ 337   3                         {
+ 338   4                           if(count_pwm5>CountMin_PWM5)
+ 339   4                                 count_pwm5-=step;
+ 340   4      //                       DataPro(count_pwm5);
+ 341   4                         }
+ 342   3                                 if(change_flag)
+ 343   3                                 {TH_H=temphh[5];TH_L=temphl[5];TL_H=templh[5];TL_L=templl[5];}
+ 344   3                          else 
+ 345   3                                      {
+ 346   4                                      DataPro(count_pwm5);
+ 347   4                                      }
+ 348   3                                      change_flag=0;
+ 349   3                      };break;
+ 350   2                      case 6:
+ 351   2                      {
+ 352   3                              P0=0xdf;
+ 353   3                        if(keynum==3)
+ 354   3                          {
+ 355   4                               if(count_pwm6<CountMax_PWM6)
+ 356   4                                 count_pwm6+=step;
+ 357   4      //               DataPro(count_pwm6);
+ 358   4                              }
+ 359   3                        else if(keynum==4)
+ 360   3                         {
+ 361   4                           if(count_pwm6>CountMin_PWM6)
+ 362   4                                 count_pwm6-=step;
+ 363   4      //                       DataPro(count_pwm6);
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 7   
+
+ 364   4                         }
+ 365   3                                 if(change_flag)
+ 366   3                                 {TH_H=temphh[6];TH_L=temphl[6];TL_H=templh[6];TL_L=templl[6];}
+ 367   3                          else 
+ 368   3                                      {
+ 369   4                                      DataPro(count_pwm6);
+ 370   4                                      }
+ 371   3                                      change_flag=0;
+ 372   3                                      
+ 373   3                      };break;
+ 374   2              }
+ 375   1              keynum=0;
+ 376   1      }
+ 377          
+ 378          /*
+ 379          void ir_time() interrupt 1
+ 380          {
+ 381            irtime++;  //用于计数2个下降沿之间的时间
+ 382          }
+ 383          
+ 384          void ir_recieve() interrupt 0 //外部中断0服务函数
+ 385          {
+ 386            static unsigned char  i;             //接收红外信号处理
+ 387            static bit startflag;                //是否开始处理标志位
+ 388          
+ 389          if(startflag)                         
+ 390             {
+ 391              if(irtime<63&&irtime>=33)//引导码 TC9012的头码，9ms+4.5ms
+ 392                                  i=0;
+ 393                          irdata[i]=irtime;//存储每个电平的持续时间，用于以后判断是0还是1
+ 394                          irtime=0;
+ 395                          i++;
+ 396                                   if(i==33)
+ 397                                  {
+ 398                                           irrecieve_ok=1;
+ 399                                           i=0;
+ 400                                          }
+ 401                    }
+ 402                   else
+ 403                          {
+ 404                          irtime=0;
+ 405                          startflag=1;
+ 406                          }
+ 407          
+ 408          }
+ 409          
+ 410          /*
+ 411          void init_inter()//定时器0初始化
+ 412          {
+ 413          
+ 414            TMOD=0x12;//定时器0工作方式2，TH0是重装值，TL0是初值
+ 415            TH0=0x00; //重载值
+ 416            TL0=0x00;
+ 417            EA=1;
+ 418            IT0 = 1;   
+ 419            EX0 = 1;   
+ 420            ET0=1;    
+ 421            TR0=1;    
+ 422          }
+ 423          */
+ 424          
+ 425          
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 8   
+
+ 426          /*
+ 427          void ir_jiema()//红外码值处理函数
+ 428          { 
+ 429            unsigned char i, j, k;
+ 430            unsigned char cord,value;
+ 431          
+ 432            k=1;
+ 433            for(i=0;i<4;i++)      //处理4个字节
+ 434               {
+ 435                for(j=1;j<=8;j++) //处理1个字节8位
+ 436                   {
+ 437                    cord=irdata[k];
+ 438                    if(cord>7)//大于某值为1，这个和晶振有绝对关系，这里使用12M计算，此值可以有一定误差
+ 439                       value|=0x80;
+ 440                    if(j<8)
+ 441                              {
+ 442                                   value>>=1;
+ 443                                  }
+ 444                     k++;
+ 445                   }
+ 446               IRcord[i]=value;
+ 447               value=0;     
+ 448               } 
+ 449                   irjiema_ok=1;//处理完毕标志位置1
+ 450          }
+ 451          
+ 452          void ir_scan()
+ 453          {
+ 454                  switch(IRcord[2])
+ 455                  {
+ 456                          case 0x15:{ keynum=1;}break;
+ 457                          case 0x07:{keynum=2;}break;
+ 458                          case 0x40:{ keynum=3;}break;
+ 459                          case 0x44:{ keynum=4;}break;
+ 460                          //default :  keynum=0;
+ 461                  }
+ 462          }
+ 463          
+ 464          */
+ 465          void delay(unsigned char x)
+ 466          {
+ 467   1              unsigned char i,j;
+ 468   1              for(i=100;i>0;i--)
+ 469   1              for(j=x;j>0;j--);
+ 470   1      } 
+ 471                            /*
+ 472           void iruse()
+ 473           {
+ 474                  if(irrecieve_ok)
+ 475                  {
+ 476                          irrecieve_ok=0;
+ 477                          ir_jiema();
+ 478                  }
+ 479                  if(irjiema_ok) 
+ 480                  {
+ 481                          irjiema_ok=0;
+ 482                          ir_scan();              
+ 483                  }
+ 484           }
+ 485           */
+*** WARNING C291 IN LINE 229 OF MAIN6.C: not every exit path returns a value
+
+C51 COMPILER V9.01   MAIN6                                                                 06/11/2014 11:21:46 PAGE 9   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1077    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     87       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
